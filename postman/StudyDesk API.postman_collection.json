@@ -1,0 +1,95 @@
+{
+  "info": {
+    "name": "StudyDesk API",
+    "description": "Phase 3 REST API workflow for StudyDesk.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "studentId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/health"
+      }
+    },
+    {
+      "name": "Get All Students",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/students"
+      }
+    },
+    {
+      "name": "Get Student By ID",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/students/{{studentId}}"
+      }
+    },
+    {
+      "name": "Search Students",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/students?search=computer"
+      }
+    },
+    {
+      "name": "Create Student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"studentId\": \"STU-API-101\",\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Sen\",\n  \"email\": \"rahul.sen.api@example.com\",\n  \"phone\": \"9876543210\",\n  \"dateOfBirth\": \"2004-02-18\",\n  \"gender\": \"MALE\",\n  \"course\": \"BCA\",\n  \"semester\": 4,\n  \"department\": \"Information Technology\",\n  \"enrollmentDate\": \"2024-07-01\",\n  \"status\": \"ACTIVE\"\n}"
+        },
+        "url": "{{baseUrl}}/api/students"
+      }
+    },
+    {
+      "name": "Update Student",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"studentId\": \"STU-API-101\",\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Sen\",\n  \"email\": \"rahul.sen.api@example.com\",\n  \"phone\": \"9876543211\",\n  \"dateOfBirth\": \"2004-02-18\",\n  \"gender\": \"MALE\",\n  \"course\": \"BCA\",\n  \"semester\": 5,\n  \"department\": \"Information Technology\",\n  \"enrollmentDate\": \"2024-07-01\",\n  \"status\": \"ACTIVE\"\n}"
+        },
+        "url": "{{baseUrl}}/api/students/{{studentId}}"
+      }
+    },
+    {
+      "name": "Delete Student",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/students/{{studentId}}"
+      }
+    },
+    {
+      "name": "Missing Student",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/students/999999"
+      }
+    }
+  ]
+}

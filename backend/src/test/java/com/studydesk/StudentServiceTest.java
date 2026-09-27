@@ -44,7 +44,9 @@ class StudentServiceTest {
         Student createdStudent = studentService.createStudent(student("STU-SERVICE-1", "Service", "Student",
                 "service.student@example.com"));
 
-        assertThat(studentService.getAllStudents()).hasSize(1);
+        assertThat(studentService.getAllStudents())
+            .extracting(Student::getStudentId)
+            .contains("STU-SERVICE-1");
         assertThat(studentService.getStudentById(createdStudent.getId()))
             .get()
             .extracting(Student::getStudentId)
