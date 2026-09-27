@@ -71,14 +71,14 @@ function StudentForm({
         nextErrors[field] = "This field is required.";
     });
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
-      nextErrors.email = "Enter a valid email address.";
+      nextErrors.email = "Please enter a valid email address.";
     if (form.phone && !/^\d{10,15}$/.test(form.phone.trim()))
-      nextErrors.phone = "Use 10 to 15 digits.";
+      nextErrors.phone = "Phone number must be between 10 and 15 digits.";
     if (
       form.semester &&
       (Number(form.semester) < 1 || Number(form.semester) > 8)
     )
-      nextErrors.semester = "Choose a semester from 1 to 8.";
+      nextErrors.semester = "Semester must be between 1 and 8.";
     return nextErrors;
   };
 
@@ -108,21 +108,31 @@ function StudentForm({
 
   const field = (name, label, type = "text", options = {}) => {
     const errorMessage = clientErrors[name] || activeServerErrors[name];
+    const fieldId = `field-${name}`;
+    const errorId = `error-${name}`;
+
     return (
-      <label
-        className={`form-field ${options.wide ? "form-field-wide" : ""}`}
-        htmlFor={name}
+      <div
+        className={`form-field ${options.wide ? "form-field-wide" : ""} ${errorMessage ? "form-field-invalid" : ""}`}
       >
-        <span>
-          {label}
-          {options.required !== false && <em>*</em>}
-        </span>
+        <label htmlFor={fieldId}>
+          <span>
+            {label}
+            {options.required !== false && (
+              <span className="required-star" aria-hidden="true">
+                *
+              </span>
+            )}
+          </span>
+        </label>
         {options.select ? (
           <select
-            id={name}
+            id={fieldId}
             name={name}
             value={form[name]}
             onChange={updateField}
+            aria-invalid={Boolean(errorMessage)}
+            aria-describedby={errorMessage ? errorId : undefined}
           >
             <option value="">Select {label.toLowerCase()}</option>
             {options.select.map((option) => (
@@ -133,7 +143,7 @@ function StudentForm({
           </select>
         ) : (
           <input
-            id={name}
+            id={fieldId}
             name={name}
             type={type}
             value={form[name]}
@@ -141,10 +151,16 @@ function StudentForm({
             placeholder={options.placeholder}
             min={type === "number" ? 1 : undefined}
             max={type === "number" ? 8 : undefined}
+            aria-invalid={Boolean(errorMessage)}
+            aria-describedby={errorMessage ? errorId : undefined}
           />
         )}
-        {errorMessage && <small className="field-error">{errorMessage}</small>}
-      </label>
+        {errorMessage && (
+          <small id={errorId} className="field-error" role="alert">
+            {errorMessage}
+          </small>
+        )}
+      </div>
     );
   };
 
@@ -152,31 +168,38 @@ function StudentForm({
     <form className="student-form" onSubmit={submitForm} noValidate>
       {serverError && (
         <div className="form-error" role="alert">
-          {serverError}
+          <strong>Error: </strong>
+          <span>{serverError}</span>
         </div>
       )}
+
       <div className="form-section">
         <div className="form-section-heading">
-          <span className="section-number">01</span>
+          <span className="section-number" aria-hidden="true">
+            01
+          </span>
           <div>
-            <h3>Identity</h3>
-            <p>Core student profile information</p>
+            <h3>Personal Information</h3>
+            <p>Identity, contact details, and student identification</p>
           </div>
         </div>
         <div className="form-grid">
           {field("studentId", "Student ID", "text", {
-            placeholder: "e.g. STU013",
+            placeholder: "e.g. STU101",
+            wide: true,
           })}
           {field("firstName", "First name", "text", {
-            placeholder: "Enter first name",
+            placeholder: "e.g. Rahul",
           })}
           {field("lastName", "Last name", "text", {
-            placeholder: "Enter last name",
+            placeholder: "e.g. Das",
           })}
-          {field("email", "Email", "email", {
+          {field("email", "Email address", "email", {
             placeholder: "student@example.com",
           })}
-          {field("phone", "Phone", "tel", { placeholder: "10 to 15 digits" })}
+          {field("phone", "Phone number", "tel", {
+            placeholder: "10 to 15 digits",
+          })}
           {field("dateOfBirth", "Date of birth", "date")}
           {field("gender", "Gender", "text", {
             required: false,
@@ -184,26 +207,34 @@ function StudentForm({
           })}
         </div>
       </div>
+
       <div className="form-section">
         <div className="form-section-heading">
-          <span className="section-number">02</span>
+          <span className="section-number" aria-hidden="true">
+            02
+          </span>
           <div>
-            <h3>Academic profile</h3>
-            <p>Enrollment and course details</p>
+            <h3>Academic Information</h3>
+            <p>Course enrollment, department, semester, and status</p>
           </div>
         </div>
         <div className="form-grid">
-          {field("course", "Course", "text", { placeholder: "e.g. BCA" })}
-          {field("semester", "Semester", "number", { placeholder: "1 - 8" })}
+          {field("course", "Course", "text", {
+            placeholder: "e.g. B.Tech Computer Science",
+          })}
           {field("department", "Department", "text", {
             placeholder: "e.g. Computer Science",
           })}
+          {field("semester", "Semester", "number", {
+            placeholder: "1 to 8",
+          })}
           {field("enrollmentDate", "Enrollment date", "date")}
-          {field("status", "Status", "text", {
+          {field("status", "Record Status", "text", {
             select: ["ACTIVE", "INACTIVE"],
           })}
         </div>
       </div>
+
       <div className="form-actions">
         <button
           className="button button-quiet"
@@ -220,7 +251,7 @@ function StudentForm({
         >
           {submitting
             ? initialStudent
-              ? "Updating..."
+              ? "Saving..."
               : "Creating..."
             : initialStudent
               ? "Save changes"

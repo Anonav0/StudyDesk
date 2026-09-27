@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 function ConfirmDialog({
   student,
   loading = false,
@@ -5,23 +7,52 @@ function ConfirmDialog({
   onCancel,
   onConfirm,
 }) {
+  useEffect(() => {
+    if (!student) return;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && !loading) {
+        onCancel();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [student, loading, onCancel]);
+
   if (!student) return null;
 
   return (
-    <div className="dialog-backdrop" role="presentation">
+    <div
+      className="dialog-backdrop"
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !loading) onCancel();
+      }}
+    >
       <section
         className="confirm-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-title"
+        aria-describedby="delete-desc"
       >
-        <div className="dialog-icon">!</div>
-        <p className="eyebrow">Delete record</p>
-        <h2 id="delete-title">Remove {student.firstName}?</h2>
-        <p className="dialog-copy">
-          This will remove {student.firstName} {student.lastName} from the
-          database. This action cannot be undone.
-        </p>
+        <div className="dialog-icon" aria-hidden="true">
+          !
+        </div>
+        <p className="eyebrow">Destructive action</p>
+        <h2 id="delete-title">Delete Student?</h2>
+        <div id="delete-desc" className="dialog-copy-block">
+          <p className="dialog-copy">
+            Are you sure you want to delete{" "}
+            <strong>
+              {student.firstName} {student.lastName} ({student.studentId})
+            </strong>
+            ?
+          </p>
+          <p className="dialog-warning">
+            This action cannot be undone and will permanently remove this record
+            from the database.
+          </p>
+        </div>
         {error && (
           <p className="form-error" role="alert">
             {error}
@@ -34,7 +65,7 @@ function ConfirmDialog({
             disabled={loading}
             type="button"
           >
-            Keep student
+            Cancel
           </button>
           <button
             className="button button-danger"
@@ -42,7 +73,7 @@ function ConfirmDialog({
             disabled={loading}
             type="button"
           >
-            {loading ? "Deleting..." : "Delete student"}
+            {loading ? "Deleting..." : "Delete Student"}
           </button>
         </div>
       </section>

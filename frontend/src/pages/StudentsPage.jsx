@@ -46,10 +46,22 @@ function StudentsPage({ onNavigate, onDelete }) {
         event.preventDefault();
         document.getElementById("student-search")?.focus();
       }
+      if (
+        event.key === "Escape" &&
+        document.activeElement.id === "student-search"
+      ) {
+        setSearch("");
+        document.getElementById("student-search")?.blur();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  const handleClearSearch = () => {
+    setSearch("");
+    document.getElementById("student-search")?.focus();
+  };
 
   return (
     <div className="page-stack page-enter">
@@ -58,7 +70,8 @@ function StudentsPage({ onNavigate, onDelete }) {
           <p className="eyebrow">Directory</p>
           <h1>Students</h1>
           <p className="page-lede">
-            Search, review, and manage every student record.
+            Search, review, and manage every student record across all
+            departments.
           </p>
         </div>
         <button
@@ -66,25 +79,43 @@ function StudentsPage({ onNavigate, onDelete }) {
           onClick={() => onNavigate("/students/new")}
           type="button"
         >
-          <span>+</span> Add student
+          <span>+</span> Add Student
         </button>
       </div>
+
       <section className="panel directory-panel">
         <div className="directory-toolbar">
           <label className="search-box" htmlFor="student-search">
-            <span aria-hidden="true">⌕</span>
+            <span className="search-icon" aria-hidden="true">
+              ⌕
+            </span>
             <input
               id="student-search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by name, ID, email, or department"
+              placeholder="Search students by ID, name, email or department..."
+              aria-label="Search students by ID, name, email or department"
             />
-            <kbd>/</kbd>
+            {search ? (
+              <button
+                className="search-clear-btn"
+                onClick={handleClearSearch}
+                type="button"
+                aria-label="Clear search"
+                title="Clear search query"
+              >
+                ✕
+              </button>
+            ) : (
+              <kbd title="Press / to search">/</kbd>
+            )}
           </label>
           <span className="result-count">
-            <strong>{students.length}</strong> records
+            <strong>{students.length}</strong>{" "}
+            {students.length === 1 ? "record" : "records"}
           </span>
         </div>
+
         {loading ? (
           <LoadingState message="Loading students..." />
         ) : error ? (
@@ -97,8 +128,10 @@ function StudentsPage({ onNavigate, onDelete }) {
         ) : (
           <StudentTable
             students={students}
+            searchQuery={search}
             onNavigate={onNavigate}
             onDelete={onDelete}
+            onClearSearch={handleClearSearch}
           />
         )}
       </section>

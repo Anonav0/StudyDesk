@@ -42,7 +42,7 @@ function StudentDetailsPage({ studentId, onNavigate, onDelete }) {
   if (loading) {
     return (
       <div className="page-stack page-enter">
-        <LoadingState message="Loading student..." />
+        <LoadingState message="Loading student details..." />
       </div>
     );
   }
@@ -52,7 +52,9 @@ function StudentDetailsPage({ studentId, onNavigate, onDelete }) {
       return (
         <div className="page-stack page-enter">
           <div className="error-state" role="alert">
-            <div className="error-icon">!</div>
+            <div className="error-icon" aria-hidden="true">
+              !
+            </div>
             <h3>Student not found.</h3>
             <p>The requested student could not be located in the database.</p>
             <button
@@ -89,11 +91,14 @@ function StudentDetailsPage({ studentId, onNavigate, onDelete }) {
           >
             ← Back to students
           </button>
-          <p className="eyebrow">Student profile</p>
+          <p className="eyebrow">Student Profile</p>
           <h1>
             {student.firstName} {student.lastName}
           </h1>
-          <p className="page-lede">A complete view of this student record.</p>
+          <p className="page-lede">
+            Comprehensive profile, academic standing, and administrative
+            records.
+          </p>
         </div>
         <div className="heading-actions">
           <button
@@ -106,12 +111,13 @@ function StudentDetailsPage({ studentId, onNavigate, onDelete }) {
           <StatusBadge status={student.status} />
         </div>
       </div>
+
       <section className="profile-hero panel">
-        <div className="profile-hero-avatar">
+        <div className="profile-hero-avatar" aria-hidden="true">
           {student.firstName[0]}
           {student.lastName[0]}
         </div>
-        <div>
+        <div className="profile-hero-content">
           <span className="profile-id">{student.studentId}</span>
           <h2>
             {student.firstName} {student.lastName}
@@ -121,18 +127,21 @@ function StudentDetailsPage({ studentId, onNavigate, onDelete }) {
           </p>
         </div>
         <div className="profile-meta">
-          <span>Enrolled</span>
+          <span>Enrolled Date</span>
           <strong>{formatDate(student.enrollmentDate)}</strong>
         </div>
       </section>
+
       <div className="detail-grid">
         <section className="panel detail-panel">
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Personal</p>
-              <h2>Personal information</h2>
+              <h2>Personal Information</h2>
             </div>
-            <span className="panel-index">01</span>
+            <span className="panel-index" aria-hidden="true">
+              01
+            </span>
           </div>
           <dl className="detail-list">
             <div>
@@ -144,11 +153,15 @@ function StudentDetailsPage({ studentId, onNavigate, onDelete }) {
               <dd>{student.lastName}</dd>
             </div>
             <div>
-              <dt>Email</dt>
+              <dt>Student ID</dt>
+              <dd className="detail-code">{student.studentId}</dd>
+            </div>
+            <div>
+              <dt>Email address</dt>
               <dd>{student.email}</dd>
             </div>
             <div>
-              <dt>Phone</dt>
+              <dt>Phone number</dt>
               <dd>{student.phone}</dd>
             </div>
             <div>
@@ -161,17 +174,20 @@ function StudentDetailsPage({ studentId, onNavigate, onDelete }) {
             </div>
           </dl>
         </section>
+
         <section className="panel detail-panel">
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Academics</p>
-              <h2>Academic information</h2>
+              <h2>Academic Information</h2>
             </div>
-            <span className="panel-index">02</span>
+            <span className="panel-index" aria-hidden="true">
+              02
+            </span>
           </div>
           <dl className="detail-list">
             <div>
-              <dt>Course</dt>
+              <dt>Course program</dt>
               <dd>{student.course}</dd>
             </div>
             <div>
@@ -179,8 +195,10 @@ function StudentDetailsPage({ studentId, onNavigate, onDelete }) {
               <dd>{student.department}</dd>
             </div>
             <div>
-              <dt>Semester</dt>
-              <dd>{student.semester}</dd>
+              <dt>Current semester</dt>
+              <dd>
+                <span className="term-pill">{student.semester}</span>
+              </dd>
             </div>
             <div>
               <dt>Enrollment date</dt>
@@ -195,10 +213,14 @@ function StudentDetailsPage({ studentId, onNavigate, onDelete }) {
           </dl>
         </section>
       </div>
+
       <div className="danger-zone">
-        <div>
+        <div className="danger-info">
           <strong>Remove this student</strong>
-          <span>Deletion is permanent in the database.</span>
+          <span>
+            Permanently remove {student.firstName} {student.lastName} and all
+            associated records from PostgreSQL.
+          </span>
         </div>
         <button
           className="button button-danger-outline"

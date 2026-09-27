@@ -36,7 +36,7 @@ function Dashboard({ onNavigate }) {
   if (loading) {
     return (
       <div className="page-stack page-enter">
-        <LoadingState message="Loading dashboard..." />
+        <LoadingState message="Loading dashboard metrics..." />
       </div>
     );
   }
@@ -61,7 +61,8 @@ function Dashboard({ onNavigate }) {
           <p className="eyebrow">Academic Administration</p>
           <h1>Good morning, admin.</h1>
           <p className="page-lede">
-            A clear view of your student records, ready for the next action.
+            Overview of student enrollments, academic status, and recent
+            workspace activity.
           </p>
         </div>
         <button
@@ -69,35 +70,37 @@ function Dashboard({ onNavigate }) {
           onClick={() => onNavigate("/students/new")}
           type="button"
         >
-          <span>+</span> Add student
+          <span>+</span> Add Student
         </button>
       </div>
 
       <section className="stats-grid" aria-label="Student statistics">
         <article className="stat-card stat-card-featured">
-          <span className="stat-label">Total students</span>
+          <span className="stat-label">Total Students</span>
           <strong>{students.length}</strong>
-          <span className="stat-note">Across all programs</span>
-          <span className="stat-orbit">◎</span>
-        </article>
-        <article className="stat-card">
-          <span className="stat-label">Active students</span>
-          <strong>{active}</strong>
-          <span className="stat-note stat-note-positive">
-            <span>↗</span>{" "}
-            {students.length ? Math.round((active / students.length) * 100) : 0}
-            % of records
+          <span className="stat-note">Across all academic programs</span>
+          <span className="stat-orbit" aria-hidden="true">
+            ◎
           </span>
         </article>
         <article className="stat-card">
-          <span className="stat-label">Inactive students</span>
+          <span className="stat-label">Active Students</span>
+          <strong>{active}</strong>
+          <span className="stat-note stat-note-positive">
+            <span aria-hidden="true">↗</span>{" "}
+            {students.length ? Math.round((active / students.length) * 100) : 0}
+            % of total records
+          </span>
+        </article>
+        <article className="stat-card">
+          <span className="stat-label">Inactive Students</span>
           <strong>{students.length - active}</strong>
-          <span className="stat-note">Needs follow-up</span>
+          <span className="stat-note">Requires academic review</span>
         </article>
         <article className="stat-card">
           <span className="stat-label">Departments</span>
           <strong>{departments}</strong>
-          <span className="stat-note">Academic programs</span>
+          <span className="stat-note">Distinct academic departments</span>
         </article>
       </section>
 
@@ -105,20 +108,29 @@ function Dashboard({ onNavigate }) {
         <article className="panel recent-panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Latest records</p>
-              <h2>Recent students</h2>
+              <p className="eyebrow">Latest Records</p>
+              <h2>Recent Students</h2>
             </div>
             <button
               className="text-button"
               onClick={() => onNavigate("/students")}
               type="button"
             >
-              View all <span>→</span>
+              View directory <span>→</span>
             </button>
           </div>
           <div className="recent-list">
             {recentStudents.length === 0 ? (
-              <p className="empty-inline-note">No student records yet.</p>
+              <div className="empty-inline-note">
+                <p>No student records exist yet.</p>
+                <button
+                  className="button button-quiet"
+                  onClick={() => onNavigate("/students/new")}
+                  type="button"
+                >
+                  Add first student
+                </button>
+              </div>
             ) : (
               recentStudents.map((student) => (
                 <button
@@ -126,8 +138,9 @@ function Dashboard({ onNavigate }) {
                   key={student.id}
                   onClick={() => onNavigate(`/students/${student.id}`)}
                   type="button"
+                  title={`View profile for ${student.firstName} ${student.lastName}`}
                 >
-                  <span className="student-avatar">
+                  <span className="student-avatar" aria-hidden="true">
                     {student.firstName[0]}
                     {student.lastName[0]}
                   </span>
@@ -140,23 +153,26 @@ function Dashboard({ onNavigate }) {
                     </small>
                   </span>
                   <StatusBadge status={student.status} />
-                  <span className="row-arrow">↗</span>
+                  <span className="row-arrow" aria-hidden="true">
+                    ↗
+                  </span>
                 </button>
               ))
             )}
           </div>
         </article>
+
         <article className="panel insight-panel">
-          <div className="insight-art">
+          <div className="insight-art" aria-hidden="true">
             <span>✦</span>
             <span>◌</span>
             <span>⌁</span>
           </div>
-          <p className="eyebrow">Workspace note</p>
-          <h2>Keep every record moving forward.</h2>
+          <p className="eyebrow">Administrative Guide</p>
+          <h2>Streamline your student operations.</h2>
           <p>
-            Your connected workspace is ready to explore. Add a student, review
-            a profile, or tidy up inactive records.
+            StudyDesk helps manage student lifecycles from initial enrollment to
+            graduation with real-time PostgreSQL persistence.
           </p>
           <button
             className="button button-dark"

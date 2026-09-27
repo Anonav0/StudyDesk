@@ -2,57 +2,96 @@
 
 StudyDesk is a full-stack student management system built with React, Spring Boot, REST APIs, PostgreSQL, Docker, and Git.
 
-This repository currently contains the Phase 1 foundation, Phase 2 persistence layer, Phase 3 REST student API, and Phase 5 React management UI. Frontend integration with the backend remains reserved for the next phase.
+The application connects a responsive, polished React frontend with a Java/Spring Boot REST backend backed by persistent PostgreSQL storage.
 
 ## Tech Stack
 
-- Frontend: React, Vite, JavaScript
-- Backend: Java 21, Spring Boot, Maven
-- Database: PostgreSQL through Docker Compose
+- **Frontend**: React 19, Vite, JavaScript, Fetch API, CSS3
+- **Backend**: Java 21, Spring Boot 3, Spring Data JPA, Hibernate, Bean Validation, Maven
+- **Database**: PostgreSQL 16 through Docker Compose
+- **DevOps**: Docker, Docker Compose, Git
 
 ## Project Structure
 
 ```text
 frontend/                    React + Vite application
-backend/                     Spring Boot application
-docker-compose.yml           PostgreSQL development database
-.env.example                 Local configuration template
-.docs/walkthroughs-and-guides/Phase guides (kept local and ignored)
+├── src/
+│   ├── components/          Reusable UI components (forms, tables, modals, badges, states)
+│   ├── pages/               Page views (Dashboard, Directory, Details, Form)
+│   ├── services/            Centralized API service layer (studentService.js)
+│   └── data/                Legacy development reference mock data
+backend/                     Spring Boot REST API
+├── src/main/java/com/studydesk/
+│   ├── config/              CORS and database seed configuration
+│   ├── controller/          REST API endpoints
+│   ├── dto/                 Request DTOs with Bean Validation
+│   ├── entity/              JPA entities
+│   ├── exception/           Global exception handlers & error responses
+│   ├── repository/          Spring Data JPA repositories
+│   └── service/             Business logic and constraint validation
+docker-compose.yml           PostgreSQL development container
+.env.example                 Root environment template
+frontend/.env.example        Frontend environment template
 ```
 
 ## Prerequisites
 
-- Node.js and npm
+- Node.js (v20+) and npm
 - JDK 21
 - Maven
 - Docker and Docker Compose
 
 ## Environment Configuration
 
-Copy `.env.example` to `.env` when local environment values need to be customized. Do not commit `.env`.
+### Root / Backend Configuration
+Copy `.env.example` to `.env` when local database or backend settings need customization. Do not commit `.env`.
 
-## Start PostgreSQL
+```env
+POSTGRES_DB=studydesk
+POSTGRES_USER=studydesk_user
+POSTGRES_PASSWORD=change_me
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=studydesk
+DB_USERNAME=studydesk_user
+DB_PASSWORD=change_me
+FRONTEND_URL=http://localhost:5173
+SERVER_PORT=8080
+```
+
+### Frontend Configuration
+The frontend communicates with Spring Boot via the `VITE_API_BASE_URL` environment variable:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+A template is maintained at `frontend/.env.example`.
+
+## Getting Started
+
+### 1. Start PostgreSQL Database
 
 ```bash
 docker compose up -d
 ```
 
-PostgreSQL listens on `localhost:5432`.
+PostgreSQL runs locally on `localhost:5432` and provides persistent storage for all student records.
 
-## Start the Backend
+### 2. Start the Spring Boot Backend
 
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-The backend listens on `http://localhost:8080`. Verify it with:
+The backend starts on `http://localhost:8080`. Verify backend health:
 
 ```bash
 curl http://localhost:8080/api/health
 ```
 
-## Start the Frontend
+### 3. Start the React Frontend
 
 ```bash
 cd frontend
@@ -60,82 +99,51 @@ npm install
 npm run dev
 ```
 
-The frontend listens on `http://localhost:5173`.
+The frontend development server starts on `http://localhost:5173`.
 
-## Phase 2 Persistence Scope
+---
 
-Phase 2 adds a PostgreSQL-backed `Student` entity, JPA repository, basic service layer, idempotent development seed data, and persistence tests. There are still no public student REST endpoints, authentication, search, or frontend integration.
+## REST API Endpoints
 
-The development database schema is updated automatically by Hibernate. Seed data is inserted only when the `students` table is empty.
+| Method | Endpoint                     | Purpose                         | Status Code       |
+| ------ | ---------------------------- | ------------------------------- | ----------------- |
+| GET    | `/api/health`                | Health check endpoint           | `200 OK`          |
+| GET    | `/api/students`              | List all students / dashboard   | `200 OK`          |
+| GET    | `/api/students?search=value` | Search by ID, name, email, dept | `200 OK`          |
+| GET    | `/api/students/{id}`         | Get student profile             | `200 OK`          |
+| POST   | `/api/students`              | Create new student record       | `201 CREATED`     |
+| PUT    | `/api/students/{id}`         | Update student record           | `200 OK`          |
+| DELETE | `/api/students/{id}`         | Remove student record           | `204 NO CONTENT`  |
 
-## REST API
+---
 
-The backend runs at `http://localhost:8080` and exposes these Phase 3 endpoints:
+## Frontend UI & Polish (Phase 7)
 
-| Method | Endpoint                     | Purpose                         | Success          |
-| ------ | ---------------------------- | ------------------------------- | ---------------- |
-| GET    | `/api/health`                | Check backend status            | `200 OK`         |
-| GET    | `/api/students`              | List all students               | `200 OK`         |
-| GET    | `/api/students/{id}`         | Get one student                 | `200 OK`         |
-| GET    | `/api/students?search=value` | Case-insensitive partial search | `200 OK`         |
-| POST   | `/api/students`              | Create a student                | `201 CREATED`    |
-| PUT    | `/api/students/{id}`         | Update a student                | `200 OK`         |
-| DELETE | `/api/students/{id}`         | Delete a student                | `204 NO CONTENT` |
+StudyDesk features a clean, responsive, and portfolio-ready student administration interface.
 
-Missing students return `404 NOT FOUND`. Duplicate student IDs or emails return `409 CONFLICT`. Search with no matches returns an empty array.
+### Responsive UI Design
+- **Fluid Layout**: Adapts gracefully across desktop, tablet (1024px/768px), and mobile viewports.
+- **Adaptive Dashboard**: Four-column metric cards automatically wrap into a 2x2 grid on tablet and single-column cards on mobile.
+- **Mobile Navigation**: Collapsible sidebar with backdrop scrim and accessible mobile menu toggle.
+- **Consistent Design System**: Unified typography hierarchy (Space Grotesk headings with DM Sans body text), standardized button tokens, subtle shadows, and accessible color contrast.
 
-Example create request:
+### Student Management Interface
+- **Dashboard**: Real-time metric cards showing Total Students, Active Students (with enrollment percentage), Inactive Students, and Department counts, alongside recent student activity.
+- **Student Directory Table**: Clean tabular view with distinct student ID badges, semester pills, status tags, and direct row actions (`View`, `Edit`, `Delete`).
+- **Responsive Table Behavior**: Full horizontal scrollability with smooth touch support on mobile and smaller viewports.
+- **Student Profile**: Split-panel layout displaying personal and academic details, hero profile header with avatar, and dedicated destructive management zone.
 
-```json
-{
-  "studentId": "STU101",
-  "firstName": "Rahul",
-  "lastName": "Sen",
-  "email": "rahul.sen@example.com",
-  "phone": "9876543210",
-  "dateOfBirth": "2004-02-18",
-  "gender": "MALE",
-  "course": "BCA",
-  "semester": 4,
-  "department": "Information Technology",
-  "enrollmentDate": "2024-07-01",
-  "status": "ACTIVE"
-}
-```
+### Search & Empty States
+- **Debounced Search**: Responsive search input querying across student IDs, names, emails, and departments with instant clear button (`✕`) and keyboard shortcut (`/`).
+- **Meaningful Empty States**: Clear contextual feedback distinguishing between an empty directory and zero search results with actionable next steps.
 
-The [StudyDesk API.postman_collection.json](postman/StudyDesk%20API.postman_collection.json) contains example API requests. React is not connected to these endpoints yet.
+### Form Validation & Feedback
+- **Clean Form Grouping**: Intuitive sections for *Personal Information* and *Academic Information* with responsive two-column grid layout.
+- **Immediate Validation Feedback**: Client-side validation for required fields, email syntax, phone length (10-15 digits), and semester range (1-8), alongside Spring Boot backend validation mappings without layout shifting.
+- **Conflict Handling**: Clear user-friendly messages for duplicate student IDs or emails (`409 Conflict`).
+- **Prevent Duplicate Submissions**: Action buttons display active states (`Creating...`, `Saving...`, `Deleting...`) and are disabled during in-flight network requests.
 
-## Validation & Error Handling
-
-POST and PUT requests use a `StudentRequest` DTO with Jakarta Bean Validation. Required fields, email format, phone digits, semester range `1-8`, date fields, and status are checked before the service runs.
-
-The service handles duplicate student IDs/emails and future dates. `GlobalExceptionHandler` returns one safe error shape for validation, not-found, conflicts, malformed JSON, invalid path parameters, database constraint conflicts, and unexpected errors. Responses include `timestamp`, `status`, `error`, `message`, `path`, and optional `fieldErrors` without stack traces.
-
-Example validation response:
-
-```json
-{
-  "status": 400,
-  "error": "Validation Failed",
-  "message": "Request contains invalid fields",
-  "fieldErrors": {
-    "email": "Must be a valid email address",
-    "semester": "Semester must be between 1 and 8"
-  }
-}
-```
-
-Duplicate IDs/emails return `409 CONFLICT`; missing students return `404 NOT FOUND`; malformed JSON and invalid path IDs return `400 BAD REQUEST`.
-
-## Frontend UI
-
-The React/Vite frontend currently provides a local mock-data experience with:
-
-- Dashboard statistics and recent students
-- Searchable student directory
-- Add and edit student forms with browser-side validation
-- Student details and delete confirmation
-- Responsive navigation and mobile-friendly layouts
-- Client-side routes for dashboard, students, add, edit, and details pages
-
-This phase intentionally does not call the Spring Boot API. Student records are held in React state using fictional mock data; API integration will be implemented in the next phase.
+### Loading & Error Handling
+- **Non-blocking Loading States**: Localized spinners for directory, profile, and dashboard loading.
+- **Safe Error Handling**: User-friendly messages with retry capability on network disconnection or server downtime; internal stack traces and technical details are never exposed to the user.
+- **Destructive Deletion Confirmation**: Accessible modal dialog verifying the target student ID and name with cancellation via `Escape` key or backdrop click.
