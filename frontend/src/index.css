@@ -209,6 +209,8 @@ button {
 .content-shell {
   width: calc(100% - 250px);
   margin-left: 250px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .topbar {
@@ -801,7 +803,15 @@ h3 {
 }
 
 /* Student Table Styles */
+.directory-panel {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
 .table-wrap {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -1517,6 +1527,8 @@ h3 {
   .content-shell {
     width: 100%;
     margin-left: 0;
+    min-width: 0;
+    max-width: 100%;
   }
   .topbar {
     height: 68px;

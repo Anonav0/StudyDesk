@@ -1,13 +1,16 @@
 package com.studydesk;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
 import com.studydesk.entity.Student;
@@ -57,6 +60,53 @@ class StudentRepositoryTest {
         assertThat(studentRepository.existsByEmail("unique.student@example.com")).isTrue();
         assertThat(studentRepository.existsByStudentId("STU-MISSING")).isFalse();
         assertThat(studentRepository.existsByEmail("missing@example.com")).isFalse();
+    }
+
+    @Test
+    void duplicateStudentIdThrowsDataIntegrityViolationException() {
+        studentRepository.saveAndFlush(student("STU-REPO-DUPID", "First", "Student",
+                "first.dupid@example.com"));
+
+        Student duplicate = student("STU-REPO-DUPID", "Second", "Student",
+                "second.dupid@example.com");
+        assertThatThrownBy(() -> studentRepository.saveAndFlush(duplicate))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void duplicateEmailThrowsDataIntegrityViolationException() {
+        studentRepository.saveAndFlush(student("STU-REPO-EMAIL1", "First", "Student",
+                "same.email@example.com"));
+
+        Student duplicate = student("STU-REPO-EMAIL2", "Second", "Student",
+                "same.email@example.com");
+        assertThatThrownBy(() -> studentRepository.saveAndFlush(duplicate))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void searchFindsStudentsByMultipleFieldsCaseInsensitively() {
+        Student s = student("STU-REPO-SEARCH-1", "Ananya", "Sen", "ananya.sen@example.com");
+        s.setDepartment("Bio-Technology");
+        studentRepository.saveAndFlush(s);
+
+        List<Student> byId = studentRepository.search("repo-search-1");
+        assertThat(byId).extracting(Student::getStudentId).contains("STU-REPO-SEARCH-1");
+
+        List<Student> byFirstName = studentRepository.search("ananya");
+        assertThat(byFirstName).extracting(Student::getStudentId).contains("STU-REPO-SEARCH-1");
+
+        List<Student> byLastName = studentRepository.search("SEN");
+        assertThat(byLastName).extracting(Student::getStudentId).contains("STU-REPO-SEARCH-1");
+
+        List<Student> byEmail = studentRepository.search("ananya.sen");
+        assertThat(byEmail).extracting(Student::getStudentId).contains("STU-REPO-SEARCH-1");
+
+        List<Student> byDept = studentRepository.search("technology");
+        assertThat(byDept).extracting(Student::getStudentId).contains("STU-REPO-SEARCH-1");
+
+        List<Student> nonMatching = studentRepository.search("nonexistentquery999");
+        assertThat(nonMatching).extracting(Student::getStudentId).doesNotContain("STU-REPO-SEARCH-1");
     }
 
     private Student student(String studentId, String firstName, String lastName, String email) {
