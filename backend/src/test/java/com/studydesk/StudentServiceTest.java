@@ -1,6 +1,7 @@
 package com.studydesk;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
 
@@ -13,6 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import com.studydesk.entity.Student;
 import com.studydesk.entity.StudentStatus;
+import com.studydesk.exception.InvalidStudentDataException;
 import com.studydesk.repository.StudentRepository;
 import com.studydesk.service.StudentService;
 
@@ -64,6 +66,17 @@ class StudentServiceTest {
         studentService.deleteStudent(createdStudent.getId());
         assertThat(studentService.getStudentById(createdStudent.getId())).isEmpty();
     }
+
+        @Test
+        void rejectsFutureStudentDates() {
+        Student futureStudent = student("STU-SERVICE-FUTURE", "Future", "Student",
+            "future.student@example.com");
+        futureStudent.setDateOfBirth(LocalDate.now().plusDays(1));
+
+        assertThatThrownBy(() -> studentService.createStudent(futureStudent))
+            .isInstanceOf(InvalidStudentDataException.class)
+            .hasMessage("Date of birth cannot be in the future");
+        }
 
     private Student student(String studentId, String firstName, String lastName, String email) {
         return new Student(

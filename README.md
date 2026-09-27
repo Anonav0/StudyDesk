@@ -103,4 +103,26 @@ Example create request:
 }
 ```
 
-Import [StudyDesk API.postman_collection.json](postman/StudyDesk%20API.postman_collection.json) into Postman for the complete manual workflow. React is not connected to these endpoints yet.
+The [StudyDesk API.postman_collection.json](postman/StudyDesk%20API.postman_collection.json) contains example API requests. React is not connected to these endpoints yet.
+
+## Validation & Error Handling
+
+POST and PUT requests use a `StudentRequest` DTO with Jakarta Bean Validation. Required fields, email format, phone digits, semester range `1-8`, date fields, and status are checked before the service runs.
+
+The service handles duplicate student IDs/emails and future dates. `GlobalExceptionHandler` returns one safe error shape for validation, not-found, conflicts, malformed JSON, invalid path parameters, database constraint conflicts, and unexpected errors. Responses include `timestamp`, `status`, `error`, `message`, `path`, and optional `fieldErrors` without stack traces.
+
+Example validation response:
+
+```json
+{
+  "status": 400,
+  "error": "Validation Failed",
+  "message": "Request contains invalid fields",
+  "fieldErrors": {
+    "email": "Must be a valid email address",
+    "semester": "Semester must be between 1 and 8"
+  }
+}
+```
+
+Duplicate IDs/emails return `409 CONFLICT`; missing students return `404 NOT FOUND`; malformed JSON and invalid path IDs return `400 BAD REQUEST`.

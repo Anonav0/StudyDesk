@@ -2,6 +2,8 @@ package com.studydesk.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.studydesk.dto.StudentRequest;
 import com.studydesk.entity.Student;
 import com.studydesk.exception.StudentNotFoundException;
 import com.studydesk.service.StudentService;
@@ -43,14 +46,14 @@ public class StudentController {
     }
 
     @PostMapping
-    public ResponseEntity<Student> createStudent(@RequestBody Student student) {
-        Student createdStudent = studentService.createStudent(student);
+    public ResponseEntity<Student> createStudent(@Valid @RequestBody StudentRequest request) {
+        Student createdStudent = studentService.createStudent(request.toStudent());
         return ResponseEntity.status(HttpStatus.CREATED).body(createdStudent);
     }
 
     @PutMapping("/{id}")
-    public Student updateStudent(@PathVariable Long id, @RequestBody Student student) {
-        return studentService.updateStudent(id, student);
+    public Student updateStudent(@PathVariable Long id, @Valid @RequestBody StudentRequest request) {
+        return studentService.updateStudent(id, request.toStudent());
     }
 
     @DeleteMapping("/{id}")

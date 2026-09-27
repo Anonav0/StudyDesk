@@ -2,11 +2,13 @@ package com.studydesk.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 import org.springframework.stereotype.Service;
 
 import com.studydesk.entity.Student;
 import com.studydesk.exception.DuplicateStudentException;
+import com.studydesk.exception.InvalidStudentDataException;
 import com.studydesk.exception.StudentNotFoundException;
 import com.studydesk.repository.StudentRepository;
 
@@ -20,6 +22,7 @@ public class StudentService {
     }
 
     public Student createStudent(Student student) {
+        validateDates(student);
         ensureUniqueStudentId(student.getStudentId(), null);
         ensureUniqueEmail(student.getEmail(), null);
         return studentRepository.save(student);
@@ -37,6 +40,7 @@ public class StudentService {
         Student existingStudent = studentRepository.findById(id)
                 .orElseThrow(() -> new StudentNotFoundException(id));
 
+        validateDates(updatedStudent);
         ensureUniqueStudentId(updatedStudent.getStudentId(), id);
         ensureUniqueEmail(updatedStudent.getEmail(), id);
 
@@ -81,5 +85,15 @@ public class StudentService {
                 .ifPresent(student -> {
                     throw new DuplicateStudentException("email", email);
                 });
+    }
+
+    private void validateDates(Student student) {
+        LocalDate today = LocalDate.now();
+        if (student.getDateOfBirth().isAfter(today)) {
+            throw new InvalidStudentDataException("Date of birth cannot be in the future");
+        }
+        if (student.getEnrollmentDate().isAfter(today)) {
+            throw new InvalidStudentDataException("Enrollment date cannot be in the future");
+        }
     }
 }

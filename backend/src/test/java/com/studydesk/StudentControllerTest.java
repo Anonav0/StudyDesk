@@ -1,12 +1,13 @@
 package com.studydesk;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -21,7 +22,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.studydesk.controller.StudentController;
 import com.studydesk.entity.Student;
 import com.studydesk.entity.StudentStatus;
@@ -32,9 +32,6 @@ class StudentControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @MockBean
     private StudentService studentService;
@@ -66,10 +63,61 @@ class StudentControllerTest {
 
         mockMvc.perform(post("/api/students")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createdStudent)))
+                .content(validRequest()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.studentId").value("STU-API-1"));
     }
+
+        @Test
+        void rejectsInvalidRequestWithFieldErrors() throws Exception {
+        mockMvc.perform(post("/api/students")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"firstName\":\"\",\"email\":\"bad\",\"phone\":\"12\",\"semester\":9}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error").value("Validation Failed"))
+            .andExpect(jsonPath("$.fieldErrors.studentId").exists())
+            .andExpect(jsonPath("$.fieldErrors.email").value("Must be a valid email address"))
+            .andExpect(jsonPath("$.fieldErrors.semester").value("Semester must be between 1 and 8"));
+        }
+
+    @Test
+    void validatesPutRequestsToo() throws Exception {
+        mockMvc.perform(put("/api/students/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"studentId\":\"STU-1\",\"semester\":0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation Failed"))
+                .andExpect(jsonPath("$.fieldErrors.semester").value("Semester must be between 1 and 8"));
+    }
+
+        @Test
+        void rejectsMalformedJsonWithoutStackTrace() throws Exception {
+        mockMvc.perform(post("/api/students")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"studentId\":}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error").value("Bad Request"))
+            .andExpect(jsonPath("$.message").value("Request body is malformed or contains an invalid value"));
+        }
+
+        @Test
+        void rejectsInvalidPathParameterWithSafeMessage() throws Exception {
+        mockMvc.perform(get("/api/students/abc"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Invalid student ID"));
+        }
+
+        @Test
+        void mapsDuplicateStudentToConflict() throws Exception {
+        doThrow(new com.studydesk.exception.DuplicateStudentException("student ID", "STU-API-1"))
+            .when(studentService).createStudent(any(Student.class));
+
+        mockMvc.perform(post("/api/students")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(validRequest()))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.error").value("Conflict"));
+        }
 
     @Test
     void returnsNotFoundForMissingStudent() throws Exception {
@@ -103,4 +151,23 @@ class StudentControllerTest {
                 StudentStatus.ACTIVE
         );
     }
+
+        private String validRequest() {
+                return """
+                                {
+                                    "studentId": "STU-API-1",
+                                    "firstName": "Arjun",
+                                    "lastName": "Das",
+                                    "email": "arjun.das@example.com",
+                                    "phone": "9876543210",
+                                    "dateOfBirth": "2003-05-12",
+                                    "gender": "MALE",
+                                    "course": "BCA",
+                                    "semester": 5,
+                                    "department": "Computer Science",
+                                    "enrollmentDate": "2023-07-15",
+                                    "status": "ACTIVE"
+                                }
+                                """;
+        }
 }
