@@ -1,6 +1,12 @@
+import { useCallback, useEffect, useState } from "react";
+
+import ErrorMessage from "../components/ErrorMessage";
+import LoadingState from "../components/LoadingState";
 import StatusBadge from "../components/StatusBadge";
+import { getStudentById } from "../services/studentService";
 
 function formatDate(value) {
+  if (!value) return "—";
   return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
@@ -8,8 +14,69 @@ function formatDate(value) {
   }).format(new Date(`${value}T00:00:00`));
 }
 
-function StudentDetailsPage({ student, onNavigate, onDelete }) {
-  if (!student) return null;
+function StudentDetailsPage({ studentId, onNavigate, onDelete }) {
+  const [student, setStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadStudent = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      setStudent(await getStudentById(studentId));
+    } catch (requestError) {
+      setError(
+        requestError.status === 404
+          ? "Student not found."
+          : requestError.message,
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [studentId]);
+
+  useEffect(() => {
+    loadStudent();
+  }, [loadStudent]);
+
+  if (loading) {
+    return (
+      <div className="page-stack page-enter">
+        <LoadingState message="Loading student..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    if (error === "Student not found.") {
+      return (
+        <div className="page-stack page-enter">
+          <div className="error-state" role="alert">
+            <div className="error-icon">!</div>
+            <h3>Student not found.</h3>
+            <p>The requested student could not be located in the database.</p>
+            <button
+              className="button button-primary"
+              onClick={() => onNavigate("/students")}
+              type="button"
+            >
+              Back to Students
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="page-stack page-enter">
+        <ErrorMessage
+          title="Unable to load student."
+          message={error}
+          retryLabel="Retry"
+          onRetry={loadStudent}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="page-stack page-enter">
@@ -131,7 +198,7 @@ function StudentDetailsPage({ student, onNavigate, onDelete }) {
       <div className="danger-zone">
         <div>
           <strong>Remove this student</strong>
-          <span>Only the local mock record will be affected.</span>
+          <span>Deletion is permanent in the database.</span>
         </div>
         <button
           className="button button-danger-outline"

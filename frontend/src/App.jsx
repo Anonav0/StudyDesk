@@ -2,17 +2,18 @@ import { useEffect, useState } from "react";
 
 import ConfirmDialog from "./components/ConfirmDialog";
 import Layout from "./components/Layout";
-import { mockStudents } from "./data/mockStudents";
 import Dashboard from "./pages/Dashboard";
 import NotFoundPage from "./pages/NotFoundPage";
 import StudentDetailsPage from "./pages/StudentDetailsPage";
 import StudentFormPage from "./pages/StudentFormPage";
 import StudentsPage from "./pages/StudentsPage";
+import { deleteStudent } from "./services/studentService";
 
 function App() {
-  const [students, setStudents] = useState(mockStudents);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [studentToDelete, setStudentToDelete] = useState(null);
+  const [deleteState, setDeleteState] = useState({ loading: false, error: "" });
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const handlePopState = () => setCurrentPath(window.location.pathname);
@@ -26,68 +27,59 @@ function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const findStudent = (id) =>
-    students.find((student) => student.id === Number(id));
   const pathParts = currentPath.split("/").filter(Boolean);
-  const selectedStudent =
-    pathParts[0] === "students" && pathParts[1]
-      ? findStudent(pathParts[1])
-      : null;
+  const selectedStudentId = pathParts[0] === "students" ? pathParts[1] : null;
 
-  const addStudent = (student) => {
-    const nextId = Math.max(...students.map((item) => item.id), 0) + 1;
-    setStudents((current) => [...current, { ...student, id: nextId }]);
-    navigate(`/students/${nextId}`);
+  const openDeleteDialog = (student) => {
+    setDeleteState({ loading: false, error: "" });
+    setStudentToDelete(student);
   };
 
-  const updateStudent = (student) => {
-    setStudents((current) =>
-      current.map((item) => (item.id === student.id ? student : item)),
-    );
-    navigate(`/students/${student.id}`);
-  };
-
-  const confirmDelete = () => {
-    setStudents((current) =>
-      current.filter((student) => student.id !== studentToDelete.id),
-    );
-    setStudentToDelete(null);
-    navigate("/students");
+  const confirmDelete = async () => {
+    if (!studentToDelete) return;
+    setDeleteState({ loading: true, error: "" });
+    try {
+      await deleteStudent(studentToDelete.id);
+      setStudentToDelete(null);
+      setDeleteState({ loading: false, error: "" });
+      setRefreshKey((k) => k + 1);
+      navigate("/students");
+    } catch (error) {
+      setDeleteState({
+        loading: false,
+        error: error.message || "Failed to delete student. Please try again.",
+      });
+    }
   };
 
   const renderPage = () => {
-    if (currentPath === "/" || currentPath === "")
-      return <Dashboard students={students} onNavigate={navigate} />;
-    if (currentPath === "/students")
+    if (currentPath === "/" || currentPath === "") {
+      return <Dashboard onNavigate={navigate} />;
+    }
+    if (currentPath === "/students") {
       return (
         <StudentsPage
-          students={students}
+          key={refreshKey}
           onNavigate={navigate}
-          onDelete={setStudentToDelete}
+          onDelete={openDeleteDialog}
         />
       );
-    if (currentPath === "/students/new")
-      return <StudentFormPage onSubmit={addStudent} onNavigate={navigate} />;
+    }
+    if (currentPath === "/students/new") {
+      return <StudentFormPage onNavigate={navigate} />;
+    }
     if (/^\/students\/\d+\/edit$/.test(currentPath)) {
-      return selectedStudent ? (
-        <StudentFormPage
-          student={selectedStudent}
-          onSubmit={updateStudent}
-          onNavigate={navigate}
-        />
-      ) : (
-        <NotFoundPage onNavigate={navigate} />
+      return (
+        <StudentFormPage studentId={selectedStudentId} onNavigate={navigate} />
       );
     }
     if (/^\/students\/\d+$/.test(currentPath)) {
-      return selectedStudent ? (
+      return (
         <StudentDetailsPage
-          student={selectedStudent}
+          studentId={selectedStudentId}
           onNavigate={navigate}
-          onDelete={setStudentToDelete}
+          onDelete={openDeleteDialog}
         />
-      ) : (
-        <NotFoundPage onNavigate={navigate} />
       );
     }
     return <NotFoundPage onNavigate={navigate} />;
@@ -98,7 +90,14 @@ function App() {
       {renderPage()}
       <ConfirmDialog
         student={studentToDelete}
-        onCancel={() => setStudentToDelete(null)}
+        loading={deleteState.loading}
+        error={deleteState.error}
+        onCancel={() => {
+          if (!deleteState.loading) {
+            setStudentToDelete(null);
+            setDeleteState({ loading: false, error: "" });
+          }
+        }}
         onConfirm={confirmDelete}
       />
     </Layout>

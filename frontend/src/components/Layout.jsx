@@ -44,7 +44,7 @@ function Layout({ currentPath, onNavigate, children }) {
 
         <div className="sidebar-footer">
           <span className="online-dot" />
-          <span>Mock workspace</span>
+          <span>Connected workspace</span>
         </div>
       </aside>
 

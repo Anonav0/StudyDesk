@@ -1,22 +1,55 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
+import ErrorMessage from "../components/ErrorMessage";
+import LoadingState from "../components/LoadingState";
 import StudentTable from "../components/StudentTable";
+import { getStudents } from "../services/studentService";
 
-function StudentsPage({ students, onNavigate, onDelete }) {
+function StudentsPage({ onNavigate, onDelete }) {
   const [search, setSearch] = useState("");
-  const filteredStudents = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return students;
-    return students.filter((student) =>
-      [
-        student.studentId,
-        student.firstName,
-        student.lastName,
-        student.email,
-        student.department,
-      ].some((value) => value.toLowerCase().includes(query)),
-    );
-  }, [search, students]);
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    const delay = search ? 300 : 0;
+    const timer = setTimeout(() => {
+      setLoading(true);
+      setError("");
+      getStudents(search)
+        .then((data) => {
+          if (active) setStudents(data);
+        })
+        .catch((requestError) => {
+          if (active) setError(requestError.message);
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    }, delay);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [search, retry]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (
+        event.key === "/" &&
+        document.activeElement.tagName !== "INPUT" &&
+        document.activeElement.tagName !== "TEXTAREA"
+      ) {
+        event.preventDefault();
+        document.getElementById("student-search")?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <div className="page-stack page-enter">
@@ -49,15 +82,25 @@ function StudentsPage({ students, onNavigate, onDelete }) {
             <kbd>/</kbd>
           </label>
           <span className="result-count">
-            <strong>{filteredStudents.length}</strong> of {students.length}{" "}
-            records
+            <strong>{students.length}</strong> records
           </span>
         </div>
-        <StudentTable
-          students={filteredStudents}
-          onNavigate={onNavigate}
-          onDelete={onDelete}
-        />
+        {loading ? (
+          <LoadingState message="Loading students..." />
+        ) : error ? (
+          <ErrorMessage
+            title="Unable to load students."
+            message={error}
+            retryLabel="Retry"
+            onRetry={() => setRetry((value) => value + 1)}
+          />
+        ) : (
+          <StudentTable
+            students={students}
+            onNavigate={onNavigate}
+            onDelete={onDelete}
+          />
+        )}
       </section>
     </div>
   );

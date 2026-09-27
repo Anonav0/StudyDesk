@@ -1,4 +1,10 @@
-function ConfirmDialog({ student, onCancel, onConfirm }) {
+function ConfirmDialog({
+  student,
+  loading = false,
+  error = "",
+  onCancel,
+  onConfirm,
+}) {
   if (!student) return null;
 
   return (
@@ -13,13 +19,19 @@ function ConfirmDialog({ student, onCancel, onConfirm }) {
         <p className="eyebrow">Delete record</p>
         <h2 id="delete-title">Remove {student.firstName}?</h2>
         <p className="dialog-copy">
-          This will remove {student.firstName} {student.lastName} from the mock
-          workspace. This action cannot be undone.
+          This will remove {student.firstName} {student.lastName} from the
+          database. This action cannot be undone.
         </p>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
         <div className="dialog-actions">
           <button
             className="button button-quiet"
             onClick={onCancel}
+            disabled={loading}
             type="button"
           >
             Keep student
@@ -27,9 +39,10 @@ function ConfirmDialog({ student, onCancel, onConfirm }) {
           <button
             className="button button-danger"
             onClick={onConfirm}
+            disabled={loading}
             type="button"
           >
-            Delete student
+            {loading ? "Deleting..." : "Delete student"}
           </button>
         </div>
       </section>

@@ -1,18 +1,64 @@
-import StatusBadge from "../components/StatusBadge";
+import { useCallback, useEffect, useState } from "react";
 
-function Dashboard({ students, onNavigate }) {
+import ErrorMessage from "../components/ErrorMessage";
+import LoadingState from "../components/LoadingState";
+import StatusBadge from "../components/StatusBadge";
+import { getStudents } from "../services/studentService";
+
+function Dashboard({ onNavigate }) {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const active = students.filter(
     (student) => student.status === "ACTIVE",
   ).length;
-  const departments = new Set(students.map((student) => student.department))
-    .size;
+  const departments = new Set(
+    students.map((student) => student.department?.trim()).filter(Boolean),
+  ).size;
   const recentStudents = [...students].slice(-4).reverse();
+
+  const loadStudents = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      setStudents(await getStudents());
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStudents();
+  }, [loadStudents]);
+
+  if (loading) {
+    return (
+      <div className="page-stack page-enter">
+        <LoadingState message="Loading dashboard..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-stack page-enter">
+        <ErrorMessage
+          title="Unable to load dashboard."
+          message={error}
+          retryLabel="Retry"
+          onRetry={loadStudents}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="page-stack page-enter">
       <div className="page-heading dashboard-heading">
         <div>
-          <p className="eyebrow">Tuesday · 27 September 2026</p>
+          <p className="eyebrow">Academic Administration</p>
           <h1>Good morning, admin.</h1>
           <p className="page-lede">
             A clear view of your student records, ready for the next action.
@@ -38,8 +84,9 @@ function Dashboard({ students, onNavigate }) {
           <span className="stat-label">Active students</span>
           <strong>{active}</strong>
           <span className="stat-note stat-note-positive">
-            <span>↗</span> {Math.round((active / students.length) * 100)}% of
-            records
+            <span>↗</span>{" "}
+            {students.length ? Math.round((active / students.length) * 100) : 0}
+            % of records
           </span>
         </article>
         <article className="stat-card">
@@ -70,29 +117,33 @@ function Dashboard({ students, onNavigate }) {
             </button>
           </div>
           <div className="recent-list">
-            {recentStudents.map((student) => (
-              <button
-                className="recent-row"
-                key={student.id}
-                onClick={() => onNavigate(`/students/${student.id}`)}
-                type="button"
-              >
-                <span className="student-avatar">
-                  {student.firstName[0]}
-                  {student.lastName[0]}
-                </span>
-                <span className="recent-name">
-                  <strong>
-                    {student.firstName} {student.lastName}
-                  </strong>
-                  <small>
-                    {student.studentId} · {student.course}
-                  </small>
-                </span>
-                <StatusBadge status={student.status} />
-                <span className="row-arrow">↗</span>
-              </button>
-            ))}
+            {recentStudents.length === 0 ? (
+              <p className="empty-inline-note">No student records yet.</p>
+            ) : (
+              recentStudents.map((student) => (
+                <button
+                  className="recent-row"
+                  key={student.id}
+                  onClick={() => onNavigate(`/students/${student.id}`)}
+                  type="button"
+                >
+                  <span className="student-avatar">
+                    {student.firstName[0]}
+                    {student.lastName[0]}
+                  </span>
+                  <span className="recent-name">
+                    <strong>
+                      {student.firstName} {student.lastName}
+                    </strong>
+                    <small>
+                      {student.studentId} · {student.course}
+                    </small>
+                  </span>
+                  <StatusBadge status={student.status} />
+                  <span className="row-arrow">↗</span>
+                </button>
+              ))
+            )}
           </div>
         </article>
         <article className="panel insight-panel">
@@ -104,8 +155,8 @@ function Dashboard({ students, onNavigate }) {
           <p className="eyebrow">Workspace note</p>
           <h2>Keep every record moving forward.</h2>
           <p>
-            Your mock workspace is ready to explore. Add a student, review a
-            profile, or tidy up inactive records.
+            Your connected workspace is ready to explore. Add a student, review
+            a profile, or tidy up inactive records.
           </p>
           <button
             className="button button-dark"

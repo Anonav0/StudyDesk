@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const blankStudent = {
   studentId: "",
@@ -15,18 +15,41 @@ const blankStudent = {
   status: "ACTIVE",
 };
 
-function StudentForm({ initialStudent, onSubmit, onCancel }) {
+function StudentForm({
+  initialStudent,
+  submitting = false,
+  serverError = "",
+  serverErrors = {},
+  onSubmit,
+  onCancel,
+}) {
   const [form, setForm] = useState({
     ...blankStudent,
     ...initialStudent,
     semester: initialStudent?.semester?.toString() ?? "",
   });
-  const [errors, setErrors] = useState({});
+  const [clientErrors, setClientErrors] = useState({});
+  const [activeServerErrors, setActiveServerErrors] = useState({});
+
+  useEffect(() => {
+    setForm({
+      ...blankStudent,
+      ...initialStudent,
+      semester: initialStudent?.semester?.toString() ?? "",
+    });
+    setClientErrors({});
+    setActiveServerErrors({});
+  }, [initialStudent]);
+
+  useEffect(() => {
+    setActiveServerErrors(serverErrors || {});
+  }, [serverErrors]);
 
   const updateField = (event) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
-    setErrors((current) => ({ ...current, [name]: "" }));
+    setClientErrors((current) => ({ ...current, [name]: "" }));
+    setActiveServerErrors((current) => ({ ...current, [name]: "" }));
   };
 
   const validate = () => {
@@ -44,12 +67,12 @@ function StudentForm({ initialStudent, onSubmit, onCancel }) {
       "enrollmentDate",
     ];
     requiredFields.forEach((field) => {
-      if (!form[field].toString().trim())
+      if (!form[field]?.toString().trim())
         nextErrors[field] = "This field is required.";
     });
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
       nextErrors.email = "Enter a valid email address.";
-    if (form.phone && !/^\d{10,15}$/.test(form.phone))
+    if (form.phone && !/^\d{10,15}$/.test(form.phone.trim()))
       nextErrors.phone = "Use 10 to 15 digits.";
     if (
       form.semester &&
@@ -61,50 +84,77 @@ function StudentForm({ initialStudent, onSubmit, onCancel }) {
 
   const submitForm = (event) => {
     event.preventDefault();
+    if (submitting) return;
     const nextErrors = validate();
     if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
+      setClientErrors(nextErrors);
       return;
     }
-    onSubmit({ ...form, semester: Number(form.semester) });
+    onSubmit({
+      studentId: form.studentId.trim(),
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      dateOfBirth: form.dateOfBirth,
+      gender: form.gender ? form.gender : null,
+      course: form.course.trim(),
+      semester: Number(form.semester),
+      department: form.department.trim(),
+      enrollmentDate: form.enrollmentDate,
+      status: form.status || "ACTIVE",
+    });
   };
 
-  const field = (name, label, type = "text", options = {}) => (
-    <label
-      className={`form-field ${options.wide ? "form-field-wide" : ""}`}
-      htmlFor={name}
-    >
-      <span>
-        {label}
-        {options.required !== false && <em>*</em>}
-      </span>
-      {options.select ? (
-        <select id={name} name={name} value={form[name]} onChange={updateField}>
-          <option value="">Select {label.toLowerCase()}</option>
-          {options.select.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <input
-          id={name}
-          name={name}
-          type={type}
-          value={form[name]}
-          onChange={updateField}
-          placeholder={options.placeholder}
-          min={type === "number" ? 1 : undefined}
-          max={type === "number" ? 8 : undefined}
-        />
-      )}
-      {errors[name] && <small className="field-error">{errors[name]}</small>}
-    </label>
-  );
+  const field = (name, label, type = "text", options = {}) => {
+    const errorMessage = clientErrors[name] || activeServerErrors[name];
+    return (
+      <label
+        className={`form-field ${options.wide ? "form-field-wide" : ""}`}
+        htmlFor={name}
+      >
+        <span>
+          {label}
+          {options.required !== false && <em>*</em>}
+        </span>
+        {options.select ? (
+          <select
+            id={name}
+            name={name}
+            value={form[name]}
+            onChange={updateField}
+          >
+            <option value="">Select {label.toLowerCase()}</option>
+            {options.select.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            id={name}
+            name={name}
+            type={type}
+            value={form[name]}
+            onChange={updateField}
+            placeholder={options.placeholder}
+            min={type === "number" ? 1 : undefined}
+            max={type === "number" ? 8 : undefined}
+          />
+        )}
+        {errorMessage && <small className="field-error">{errorMessage}</small>}
+      </label>
+    );
+  };
 
   return (
     <form className="student-form" onSubmit={submitForm} noValidate>
+      {serverError && (
+        <div className="form-error" role="alert">
+          {serverError}
+        </div>
+      )}
       <div className="form-section">
         <div className="form-section-heading">
           <span className="section-number">01</span>
@@ -158,12 +208,23 @@ function StudentForm({ initialStudent, onSubmit, onCancel }) {
         <button
           className="button button-quiet"
           onClick={onCancel}
+          disabled={submitting}
           type="button"
         >
           Cancel
         </button>
-        <button className="button button-primary" type="submit">
-          {initialStudent ? "Save changes" : "Add student"}
+        <button
+          className="button button-primary"
+          type="submit"
+          disabled={submitting}
+        >
+          {submitting
+            ? initialStudent
+              ? "Updating..."
+              : "Creating..."
+            : initialStudent
+              ? "Save changes"
+              : "Add student"}
           <span aria-hidden="true">→</span>
         </button>
       </div>
