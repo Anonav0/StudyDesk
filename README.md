@@ -2,7 +2,7 @@
 
 StudyDesk is a full-stack student management system built with React, Spring Boot, REST APIs, PostgreSQL, Docker, and Git.
 
-This repository currently contains the Phase 1 development foundation. Student-management functionality is intentionally not implemented yet.
+This repository currently contains the Phase 1 foundation and Phase 2 persistence layer. The REST student API and frontend integration are intentionally reserved for later phases.
 
 ## Tech Stack
 
@@ -17,7 +17,7 @@ frontend/                    React + Vite application
 backend/                     Spring Boot application
 docker-compose.yml           PostgreSQL development database
 .env.example                 Local configuration template
-.docs/walkthroughs-and-guides/Phase 1 guides
+.docs/walkthroughs-and-guides/Phase guides (kept local and ignored)
 ```
 
 ## Prerequisites
@@ -62,6 +62,8 @@ npm run dev
 
 The frontend listens on `http://localhost:5173`.
 
-## Phase 1 Scope
+## Phase 2 Persistence Scope
 
-Phase 1 provides only the React/Vite landing screen, Spring Boot health endpoint, PostgreSQL container, environment configuration, and development CORS setup. Student entities, CRUD operations, authentication, and business functionality belong to later phases.
+Phase 2 adds a PostgreSQL-backed `Student` entity, JPA repository, basic service layer, idempotent development seed data, and persistence tests. There are still no public student REST endpoints, authentication, search, or frontend integration.
+
+The development database schema is updated automatically by Hibernate. Seed data is inserted only when the `students` table is empty.
