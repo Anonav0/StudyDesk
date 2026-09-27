@@ -2,7 +2,7 @@
 
 StudyDesk is a full-stack student management system built with React, Spring Boot, REST APIs, PostgreSQL, Docker, and Git.
 
-This repository currently contains the Phase 1 foundation, Phase 2 persistence layer, and Phase 3 REST student API. Frontend integration remains reserved for a later phase.
+This repository currently contains the Phase 1 foundation, Phase 2 persistence layer, Phase 3 REST student API, and Phase 5 React management UI. Frontend integration with the backend remains reserved for the next phase.
 
 ## Tech Stack
 
@@ -126,3 +126,16 @@ Example validation response:
 ```
 
 Duplicate IDs/emails return `409 CONFLICT`; missing students return `404 NOT FOUND`; malformed JSON and invalid path IDs return `400 BAD REQUEST`.
+
+## Frontend UI
+
+The React/Vite frontend currently provides a local mock-data experience with:
+
+- Dashboard statistics and recent students
+- Searchable student directory
+- Add and edit student forms with browser-side validation
+- Student details and delete confirmation
+- Responsive navigation and mobile-friendly layouts
+- Client-side routes for dashboard, students, add, edit, and details pages
+
+This phase intentionally does not call the Spring Boot API. Student records are held in React state using fictional mock data; API integration will be implemented in the next phase.
